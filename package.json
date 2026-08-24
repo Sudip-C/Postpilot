@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test:nvidia": "node scripts/test-nvidia.js",
+    "test:prompt": "node scripts/test-linkedin-prompt.js",
+    "test:generator": "node scripts/test-post-generator.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },

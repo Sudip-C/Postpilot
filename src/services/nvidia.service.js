@@ -1,6 +1,13 @@
 import { env } from "../config/env.js";
 
-export async function generateWithNemotron(messages) {
+export async function generateWithNemotron(
+  messages,
+  {
+    temperature = 0.7,
+    maxTokens = 1000,
+    enableThinking = false,
+  } = {}
+) {
   if (!env.nvidiaApiKey) {
     throw new Error("NVIDIA_API_KEY is not configured.");
   }
@@ -16,8 +23,12 @@ export async function generateWithNemotron(messages) {
     body: JSON.stringify({
       model: env.nvidiaModel,
       messages,
-      temperature: 0.2,
-      max_tokens: 100,
+      temperature,
+      max_tokens: maxTokens,
+
+      chat_template_kwargs: {
+        enable_thinking: enableThinking,
+      },
     }),
   });
 
@@ -31,9 +42,9 @@ export async function generateWithNemotron(messages) {
 
   const content = data?.choices?.[0]?.message?.content;
 
-  if (!content) {
+  if (!content || !content.trim()) {
     throw new Error("NVIDIA API returned an empty response.");
   }
 
-  return content;
+  return content.trim();
 }
