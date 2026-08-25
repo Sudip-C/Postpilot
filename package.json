@@ -11,6 +11,7 @@
     "test:post-types": "node scripts/test-post-types.js",
     "test:selector": "node scripts/test-content-selector.js",
     "test:supabase": "node scripts/test-supabase.js",
+    "test:posts-table": "node scripts/test-posts-table.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
