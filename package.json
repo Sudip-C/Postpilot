@@ -8,6 +8,7 @@
     "test:prompt": "node scripts/test-linkedin-prompt.js",
     "test:generator": "node scripts/test-post-generator.js",
     "test:pillars": "node scripts/test-content-pillars.js",
+    "test:post-types": "node scripts/test-post-types.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
