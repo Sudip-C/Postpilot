@@ -33,3 +33,22 @@ export async function savePost({
 
   return data;
 }
+export async function getRecentPosts(limit = 30) {
+  if (!Number.isInteger(limit) || limit <= 0) {
+    throw new Error("Recent posts limit must be a positive integer.");
+  }
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      "id, topic, pillar_id, post_type_id, content, status, created_at, published_at"
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Failed to retrieve recent posts: ${error.message}`);
+  }
+
+  return data;
+}
