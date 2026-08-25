@@ -12,6 +12,7 @@
     "test:selector": "node scripts/test-content-selector.js",
     "test:supabase": "node scripts/test-supabase.js",
     "test:posts-table": "node scripts/test-posts-table.js",
+    "test:save-post": "node scripts/test-save-post.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
