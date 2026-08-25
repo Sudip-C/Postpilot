@@ -1,5 +1,6 @@
 import express from "express";
 import {env} from './config/env.js'
+import postRoutes from "./routes/post.routes.js";
 
 const app = express();
 
@@ -7,6 +8,7 @@ const PORT = env.PORT || 3000;
 
 app.use(express.json());
 
+app.use("/api/posts", postRoutes);
 app.get("/health",(req, res) => {
   res.status(200).json({
     status: "ok",
