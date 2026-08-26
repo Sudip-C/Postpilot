@@ -18,6 +18,7 @@
     "test:linkedin-api": "node scripts/test-linkedin-api.js",
     "test:linkedin-publish": "node scripts/test-linkedin-publish.js",
     "test:validator": "node scripts/test-post-validator.js",
+    "daily-post": "node scripts/run-daily-post.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },

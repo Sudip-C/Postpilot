@@ -52,3 +52,36 @@ export async function getRecentPosts(limit = 30) {
 
   return data;
 }
+export async function markPostPublished(
+  postId,
+  linkedinPostId
+) {
+  if (!postId) {
+    throw new Error("Post ID is required.");
+  }
+
+  if (!linkedinPostId) {
+    throw new Error(
+      "LinkedIn post ID is required."
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("posts")
+    .update({
+      status: "published",
+      linkedin_post_id: linkedinPostId,
+      published_at: new Date().toISOString(),
+    })
+    .eq("id", postId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(
+      `Failed to mark post as published: ${error.message}`
+    );
+  }
+
+  return data;
+}
