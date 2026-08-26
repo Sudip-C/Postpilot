@@ -15,6 +15,7 @@
     "test:save-post": "node scripts/test-save-post.js",
     "test:recent-posts": "node scripts/test-recent-posts.js",
     "test:linkedin-token": "node scripts/test-linkedin-token-storage.js",
+    "test:linkedin-api": "node scripts/test-linkedin-api.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },

@@ -17,7 +17,7 @@ export function createLinkedInAuthorizationUrl() {
     client_id: env.linkedinClientId,
     redirect_uri: env.linkedinRedirectUri,
     state,
-    scope: "w_member_social",
+    scope: "openid profile w_member_social",
   });
 
   const authorizationUrl =
