@@ -14,7 +14,10 @@ export const env = {
 
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
+  
   linkedinClientId: process.env.LINKEDIN_CLIENT_ID,
   linkedinClientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   linkedinRedirectUri: process.env.LINKEDIN_REDIRECT_URI,
+  linkedinTokenEncryptionKey:
+  process.env.LINKEDIN_TOKEN_ENCRYPTION_KEY,
 };

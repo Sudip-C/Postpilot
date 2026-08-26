@@ -2,6 +2,7 @@ import {
   createLinkedInAuthorizationUrl,
   exchangeLinkedInCode,
 } from "../services/linkedinOAuth.service.js";
+import { saveLinkedInToken } from "../services/linkedinToken.service.js";
 
 export function loginWithLinkedIn(req, res) {
   try {
@@ -58,18 +59,23 @@ export async function linkedinCallback(req, res) {
 
     const token = await exchangeLinkedInCode(code);
 
+    await saveLinkedInToken({
+      accessToken: token.accessToken,
+      expiresIn: token.expiresIn,
+      refreshToken: token.refreshToken,
+      refreshTokenExpiresIn: token.refreshTokenExpiresIn,
+    });
+
     return res.status(200).json({
       success: true,
       message: "LinkedIn authentication successful.",
       tokenReceived: true,
+      tokenStored: true,
       expiresIn: token.expiresIn,
       refreshTokenReceived: Boolean(token.refreshToken),
     });
   } catch (error) {
-    console.error(
-      "LinkedIn OAuth callback failed:",
-      error.message
-    );
+    console.error("LinkedIn OAuth callback failed:", error.message);
 
     return res.status(500).json({
       success: false,
