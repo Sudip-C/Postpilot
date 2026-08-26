@@ -3,11 +3,13 @@ import { generateDailyTopic } from "../services/dailyTopic.service.js";
 import { generateLinkedInPost } from "../services/postGenerator.service.js";
 import { validatePost } from "../services/postValidator.service.js";
 import { publishLinkedInTextPost } from "../services/linkedinApi.service.js";
+import { withRetry } from "../utils/retry.js";
 
 import {
   getRecentPosts,
   savePost,
   markPostPublished,
+  markPostFailed,
 } from "../services/postDatabase.service.js";
 
 export async function runDailyPostJob() {
@@ -32,19 +34,34 @@ export async function runDailyPostJob() {
   );
 
   // 3. Generate a fresh topic
-  const topic = await generateDailyTopic({
-    pillar: plan.pillar,
-    postType: plan.postType,
-    recentPosts,
-  });
+  const topic = await withRetry(
+  () =>
+    generateDailyTopic({
+      pillar: plan.pillar,
+      postType: plan.postType,
+      recentPosts,
+    }),
+  {
+    attempts: 3,
+    delayMs: 1500,
+    label: "Topic generation",
+  }
+);
 
   console.log(`Topic: ${topic}`);
 
   // 4. Generate post
-  const generatedPost =
-    await generateLinkedInPost({
+  const generatedPost = await withRetry(
+  () =>
+    generateLinkedInPost({
       topic,
-    });
+    }),
+  {
+    attempts: 3,
+    delayMs: 1500,
+    label: "Post generation",
+  }
+);
 
   // 5. Validate post
   const validation =
@@ -76,14 +93,28 @@ export async function runDailyPostJob() {
   );
 
   // 7. Publish to LinkedIn
-  const publication =
-    await publishLinkedInTextPost(
-      generatedPost.content
-    );
+  let publication;
 
-  console.log(
-    `LinkedIn post ID: ${publication.postId}`
+try {
+  publication = await withRetry(
+    () =>
+      publishLinkedInTextPost(
+        generatedPost.content
+      ),
+    {
+      attempts: 3,
+      delayMs: 2000,
+      label: "LinkedIn publishing",
+    }
   );
+} catch (error) {
+  await markPostFailed(
+    savedPost.id,
+    error.message
+  );
+
+  throw error;
+}
 
   // 8. Mark database record published
   const publishedPost =

@@ -85,3 +85,30 @@ export async function markPostPublished(
 
   return data;
 }
+export async function markPostFailed(
+  postId,
+  errorMessage
+) {
+  if (!postId) {
+    throw new Error("Post ID is required.");
+  }
+
+  const { data, error } = await supabase
+    .from("posts")
+    .update({
+      status: "failed",
+      error_message:
+        errorMessage || "Unknown publishing error.",
+    })
+    .eq("id", postId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(
+      `Failed to mark post as failed: ${error.message}`
+    );
+  }
+
+  return data;
+}
