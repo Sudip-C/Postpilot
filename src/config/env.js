@@ -5,6 +5,8 @@ dotenv.config();
 export const env = {
   port: process.env.PORT || 3000,
 
+  dailyJobSecret: process.env.DAILY_JOB_SECRET,
+
   nvidiaApiKey: process.env.NVIDIA_API_KEY,
   nvidiaApiUrl:
     process.env.NVIDIA_API_URL ||

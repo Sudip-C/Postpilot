@@ -21,6 +21,7 @@
     "daily-post": "node scripts/run-daily-post.js",
     "test:retry": "node scripts/test-retry.js",
     "test:failure": "node scripts/test-failure-handling.js",
+    "test:job-auth": "node scripts/test-job-auth.js",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
