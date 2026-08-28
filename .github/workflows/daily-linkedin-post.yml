@@ -1,0 +1,55 @@
+name: Daily LinkedIn Post
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+
+  workflow_dispatch:
+
+jobs:
+  trigger-daily-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger PostPilot daily job
+        shell: bash
+        env:
+          POSTPILOT_API_URL: ${{ secrets.POSTPILOT_API_URL }}
+          DAILY_JOB_SECRET: ${{ secrets.DAILY_JOB_SECRET }}
+
+        run: |
+          set -euo pipefail
+
+          if [ -z "$POSTPILOT_API_URL" ]; then
+            echo "POSTPILOT_API_URL is not configured."
+            exit 1
+          fi
+
+          if [ -z "$DAILY_JOB_SECRET" ]; then
+            echo "DAILY_JOB_SECRET is not configured."
+            exit 1
+          fi
+
+          response_file="$(mktemp)"
+
+          status_code=$(curl \
+            --silent \
+            --show-error \
+            --output "$response_file" \
+            --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer $DAILY_JOB_SECRET" \
+            --header "Content-Type: application/json" \
+            "$POSTPILOT_API_URL/api/jobs/daily-post")
+
+          echo "HTTP status: $status_code"
+
+          cat "$response_file"
+          echo
+
+          if [ "$status_code" -lt 200 ] || [ "$status_code" -ge 300 ]; then
+            echo "PostPilot daily job failed."
+            exit 1
+          fi
+
+          echo "PostPilot daily job completed successfully."
