@@ -12,8 +12,7 @@ export const env = {
     process.env.NVIDIA_API_URL ||
     "https://integrate.api.nvidia.com/v1/chat/completions",
   nvidiaModel:
-    process.env.NVIDIA_MODEL || "nvidia/nemotron-3.5-lightning-30b-a3b",
-
+    process.env.NVIDIA_MODEL || "nvidia/nemotron-3-nano-30b-a3b",
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
 
