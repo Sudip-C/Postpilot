@@ -1,7 +1,7 @@
 {
   "name": "postpilot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Autonomous AI-powered LinkedIn content generation and publishing with NVIDIA Nemotron, Supabase, LinkedIn OAuth, Vercel, and GitHub Actions.",
   "main": "index.js",
   "scripts": {
     "test:nvidia": "node scripts/test-nvidia.js",
@@ -25,9 +25,26 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "linkedin",
+    "automation",
+    "ai",
+    "nvidia",
+    "nemotron",
+    "supabase",
+    "express",
+    "github-actions"
+  ],
+  "author": "Sudip-C",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sudip-C/Postpilot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sudip-C/Postpilot/issues"
+  },
+  "homepage": "https://github.com/Sudip-C/Postpilot#readme",
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
     "cookie-parser": "^1.4.7",
