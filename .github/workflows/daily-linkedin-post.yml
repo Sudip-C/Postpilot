@@ -5,7 +5,9 @@ on:
     - cron: "30 3 * * *"
 
   workflow_dispatch:
-
+concurrency:
+  group: postpilot-daily-linkedin-post
+  cancel-in-progress: false
 jobs:
   trigger-daily-post:
     runs-on: ubuntu-latest
