@@ -1,0 +1,61 @@
+name: Feature request
+description: Suggest an improvement for PostPilot
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing an improvement. Please describe the user problem first, then the implementation idea.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem or limitation does this feature address?
+      placeholder: Describe the problem and who it affects.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What behavior or capability would you like PostPilot to add?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Are there simpler approaches or workarounds?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - AI generation
+        - Content strategy
+        - Validation / safety
+        - Database / memory
+        - LinkedIn integration
+        - Scheduling / automation
+        - Deployment / self-hosting
+        - Observability / alerts
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I searched existing issues and pull requests for similar requests.
+          required: true
+        - label: This request does not include credentials, tokens, or private user data.
+          required: true
