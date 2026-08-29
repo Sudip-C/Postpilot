@@ -52,6 +52,60 @@ export async function getRecentPosts(limit = 30) {
 
   return data;
 }
+export async function getPublishedPostForToday() {
+  // Determine today's calendar date in India.
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(new Date());
+
+  const year = parts.find(
+    (part) => part.type === "year"
+  ).value;
+
+  const month = parts.find(
+    (part) => part.type === "month"
+  ).value;
+
+  const day = parts.find(
+    (part) => part.type === "day"
+  ).value;
+
+  const indiaDate = `${year}-${month}-${day}`;
+
+  const start = new Date(
+    `${indiaDate}T00:00:00+05:30`
+  );
+
+  const end = new Date(
+    start.getTime() + 24 * 60 * 60 * 1000
+  );
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      "id, topic, status, linkedin_post_id, published_at"
+    )
+    .eq("status", "published")
+    .gte("published_at", start.toISOString())
+    .lt("published_at", end.toISOString())
+    .order("published_at", {
+      ascending: false,
+    })
+    .limit(1);
+
+  if (error) {
+    throw new Error(
+      `Failed to check today's published post: ${error.message}`
+    );
+  }
+
+  return data?.[0] || null;
+}
 export async function markPostPublished(
   postId,
   linkedinPostId

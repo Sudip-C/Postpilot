@@ -7,6 +7,7 @@ import { withRetry } from "../utils/retry.js";
 
 import {
   getRecentPosts,
+  getPublishedPostForToday,
   savePost,
   markPostPublished,
   markPostFailed,
@@ -15,67 +16,72 @@ import {
 export async function runDailyPostJob() {
   console.log("Starting PostPilot daily job...\n");
 
+  const existingPost = await getPublishedPostForToday();
+
+  if (existingPost) {
+    console.log(
+      "A LinkedIn post has already been published today. Skipping daily job.",
+    );
+
+    return {
+      success: true,
+      skipped: true,
+      reason: "A LinkedIn post has already been published today.",
+      databasePostId: existingPost.id,
+      linkedinPostId: existingPost.linkedin_post_id,
+    };
+  }
+
   // 1. Retrieve recent history
   const recentPosts = await getRecentPosts(30);
 
-  console.log(
-    `Loaded ${recentPosts.length} recent posts.`
-  );
+  console.log(`Loaded ${recentPosts.length} recent posts.`);
 
   // 2. Select today's content strategy
   const plan = getTodayContentPlan();
 
-  console.log(
-    `Content pillar: ${plan.pillar.name}`
-  );
+  console.log(`Content pillar: ${plan.pillar.name}`);
 
-  console.log(
-    `Post type: ${plan.postType.name}`
-  );
+  console.log(`Post type: ${plan.postType.name}`);
 
   // 3. Generate a fresh topic
   const topic = await withRetry(
-  () =>
-    generateDailyTopic({
-      pillar: plan.pillar,
-      postType: plan.postType,
-      recentPosts,
-    }),
-  {
-    attempts: 3,
-    delayMs: 1500,
-    label: "Topic generation",
-  }
-);
+    () =>
+      generateDailyTopic({
+        pillar: plan.pillar,
+        postType: plan.postType,
+        recentPosts,
+      }),
+    {
+      attempts: 3,
+      delayMs: 1500,
+      label: "Topic generation",
+    },
+  );
 
   console.log(`Topic: ${topic}`);
 
   // 4. Generate post
   const generatedPost = await withRetry(
-  () =>
-    generateLinkedInPost({
-      topic,
-    }),
-  {
-    attempts: 3,
-    delayMs: 1500,
-    label: "Post generation",
-  }
-);
+    () =>
+      generateLinkedInPost({
+        topic,
+      }),
+    {
+      attempts: 3,
+      delayMs: 1500,
+      label: "Post generation",
+    },
+  );
 
   // 5. Validate post
-  const validation =
-    validatePost(generatedPost.content);
+  const validation = validatePost(generatedPost.content);
 
-  console.log(
-    `Validation score: ${validation.score}`
-  );
+  console.log(`Validation score: ${validation.score}`);
 
   if (!validation.valid) {
     throw new Error(
-      `Generated post failed validation: ${validation.issues.join(
-        " | "
-      )}`
+      `Generated post failed validation: ${validation.issues.join(" | ")}`,
     );
   }
 
@@ -88,44 +94,33 @@ export async function runDailyPostJob() {
     status: "draft",
   });
 
-  console.log(
-    `Draft saved: ${savedPost.id}`
-  );
+  console.log(`Draft saved: ${savedPost.id}`);
 
   // 7. Publish to LinkedIn
   let publication;
 
-try {
-  publication = await withRetry(
-    () =>
-      publishLinkedInTextPost(
-        generatedPost.content
-      ),
-    {
-      attempts: 3,
-      delayMs: 2000,
-      label: "LinkedIn publishing",
-    }
-  );
-} catch (error) {
-  await markPostFailed(
-    savedPost.id,
-    error.message
-  );
+  try {
+    publication = await withRetry(
+      () => publishLinkedInTextPost(generatedPost.content),
+      {
+        attempts: 3,
+        delayMs: 2000,
+        label: "LinkedIn publishing",
+      },
+    );
+  } catch (error) {
+    await markPostFailed(savedPost.id, error.message);
 
-  throw error;
-}
+    throw error;
+  }
 
   // 8. Mark database record published
-  const publishedPost =
-    await markPostPublished(
-      savedPost.id,
-      publication.postId
-    );
-
-  console.log(
-    "Database record marked as published."
+  const publishedPost = await markPostPublished(
+    savedPost.id,
+    publication.postId,
   );
+
+  console.log("Database record marked as published.");
 
   return {
     success: true,
@@ -141,7 +136,6 @@ try {
 
     databasePostId: publishedPost.id,
 
-    linkedinPostId:
-      publication.postId,
+    linkedinPostId: publication.postId,
   };
 }
