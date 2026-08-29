@@ -4,37 +4,44 @@
 
 ### Autonomous AI-powered LinkedIn content generation and publishing
 
-PostPilot is a production-deployed Node.js service that plans, generates, validates, stores, and publishes a fresh LinkedIn post every day with minimal manual intervention.
+PostPilot is an open-source Node.js service that plans, generates, validates, stores, and publishes LinkedIn posts automatically using NVIDIA Nemotron, Supabase, LinkedIn OAuth, Vercel, and GitHub Actions.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-ESM-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)](https://expressjs.com/)
 [![NVIDIA](https://img.shields.io/badge/NVIDIA-Nemotron-76B900?logo=nvidia&logoColor=white)](https://build.nvidia.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
+[![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
 [![GitHub Actions](https://img.shields.io/badge/Automation-GitHub_Actions-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 
-**Live health endpoint:** https://postpilot-omega-gilt.vercel.app/health
+[Getting Started](#getting-started) · [Architecture](#architecture) · [API](#api-reference) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md)
+
+**Demo health endpoint:** https://postpilot-omega-gilt.vercel.app/health
 
 </div>
 
 ---
 
-## What PostPilot does
+## Overview
 
-PostPilot runs an end-to-end content pipeline for LinkedIn:
+PostPilot automates the full LinkedIn content pipeline instead of only generating text.
 
-1. Selects a weighted content pillar and post format.
-2. Reads recent post history from Supabase to reduce repetition.
-3. Generates a fresh topic with NVIDIA Nemotron.
-4. Generates and proofreads the LinkedIn post.
-5. Validates the output before anything is published.
-6. Saves the post as a draft in Supabase.
-7. Publishes through the LinkedIn API.
-8. Marks the database record as published with the LinkedIn post ID.
-9. Prevents duplicate posts on the same India calendar day.
-10. Runs automatically every day through GitHub Actions.
+It can:
 
-The current production schedule is **09:00 AM IST daily**.
+1. select a weighted content pillar and post type,
+2. read recent post history to reduce repetition,
+3. generate a fresh topic with NVIDIA Nemotron,
+4. generate and proofread the LinkedIn post,
+5. validate the content before publication,
+6. save the draft to Supabase,
+7. publish through the LinkedIn API,
+8. record the publication result,
+9. skip safely when a post has already been published that day,
+10. run automatically from GitHub Actions.
+
+The reference production deployment is scheduled for **09:00 AM IST daily**.
+
+> PostPilot is open source, but credentials are not. Every self-hosted deployment must use its own NVIDIA, Supabase, LinkedIn, Vercel, and GitHub credentials.
 
 ---
 
@@ -42,7 +49,7 @@ The current production schedule is **09:00 AM IST daily**.
 
 ```mermaid
 flowchart TD
-    A[GitHub Actions\n09:00 AM IST] --> B[Protected Vercel API]
+    A[GitHub Actions Scheduler] --> B[Protected Vercel API]
     B --> C{Already published today?}
     C -->|Yes| D[Skip safely]
     C -->|No| E[Load recent Supabase history]
@@ -54,33 +61,32 @@ flowchart TD
     I -->|Valid| K[Save draft to Supabase]
     K --> L[LinkedIn API]
     L --> M[Publish public post]
-    M --> N[Mark Supabase record published]
+    M --> N[Mark database record published]
 ```
 
 ---
 
 ## Core features
 
-- **Autonomous daily publishing** via GitHub Actions.
-- **NVIDIA Nemotron generation** using `nvidia/nemotron-3-nano-30b-a3b`.
-- **Weighted content strategy** instead of choosing topics completely at random.
+- **Autonomous scheduling** with GitHub Actions.
+- **NVIDIA Nemotron generation** using `nvidia/nemotron-3-nano-30b-a3b` by default.
+- **Weighted content strategy** across several engineering themes.
 - **Recent-post memory** backed by Supabase.
 - **Two-pass generation** with a dedicated proofreading pass.
-- **Content validation** for length, hashtags, URLs, reasoning leakage, fabricated experience, unsupported hiring claims, and suspicious formatting.
-- **Retry handling** for transient AI and LinkedIn failures.
-- **Failure tracking** in the database.
+- **Pre-publish validation** for formatting, unsupported claims, reasoning leakage, URLs, hashtag limits, and more.
+- **Retry handling** around external AI and publishing calls.
+- **Explicit NVIDIA request timeouts**.
 - **LinkedIn OAuth 2.0** authentication.
-- **Encrypted LinkedIn token storage**.
-- **Protected API endpoints** using a server-side bearer secret.
-- **Daily duplicate protection** based on the `Asia/Kolkata` calendar day.
-- **GitHub Actions concurrency control** to avoid overlapping scheduler runs.
-- **Production deployment on Vercel**.
+- **Encrypted LinkedIn token storage** using authenticated encryption.
+- **Bearer-protected API endpoints**.
+- **Daily duplicate protection** based on `Asia/Kolkata`.
+- **GitHub Actions concurrency control** to prevent overlapping scheduled runs.
+- **Failure-state persistence** in Supabase.
+- **Vercel-compatible Express deployment**.
 
 ---
 
 ## Content strategy
-
-PostPilot uses weighted content pillars so the feed stays focused while still rotating through multiple themes.
 
 | Content pillar | Weight |
 | --- | ---: |
@@ -90,7 +96,7 @@ PostPilot uses weighted content pillars so the feed stays focused while still ro
 | Developer Career | 15% |
 | Lessons & Observations | 10% |
 
-Supported post types include:
+Supported post types:
 
 - Educational
 - Technical Tip
@@ -115,7 +121,7 @@ Supported post types include:
 | Publishing | LinkedIn Posts API |
 | Hosting | Vercel |
 | Scheduler | GitHub Actions |
-| Secrets | Vercel Environment Variables + GitHub Actions Secrets |
+| Secrets | Environment variables + GitHub Actions Secrets |
 
 ---
 
@@ -124,20 +130,28 @@ Supported post types include:
 ```text
 Postpilot/
 ├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── PULL_REQUEST_TEMPLATE.md
 │   └── workflows/
 │       └── daily-linkedin-post.yml
-├── scripts/                  # Integration and service tests
+├── scripts/                  # Service and integration tests
 ├── src/
-│   ├── config/               # Environment, Supabase, strategy config
+│   ├── config/               # Environment, database, strategy config
 │   ├── controllers/          # HTTP controllers
-│   ├── jobs/                 # Daily autonomous posting pipeline
-│   ├── middleware/           # Protected-job authorization
-│   ├── prompts/              # LinkedIn generation prompt builders
+│   ├── jobs/                 # Autonomous daily posting pipeline
+│   ├── middleware/           # Bearer-secret authorization
+│   ├── prompts/              # Prompt builders
 │   ├── routes/               # Express routes
 │   ├── services/             # NVIDIA, LinkedIn, DB, validation services
 │   ├── utils/                # Retry utilities
 │   └── index.js              # Express application entry point
+├── supabase/
+│   └── schema.sql            # Reproducible database schema
 ├── .env.example
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── SECURITY.md
 ├── package.json
 └── README.md
 ```
@@ -145,6 +159,17 @@ Postpilot/
 ---
 
 ## Getting started
+
+### Prerequisites
+
+You need:
+
+- Node.js
+- an NVIDIA API key
+- a Supabase project
+- a LinkedIn Developer App with member-posting capability
+- GitHub Actions if you want scheduled automation
+- Vercel or another Node-compatible host for production deployment
 
 ### 1. Clone the repository
 
@@ -159,9 +184,31 @@ cd Postpilot
 npm install
 ```
 
-### 3. Configure environment variables
+### 3. Create your Supabase tables
 
-Create a `.env` file in the project root:
+Open the Supabase SQL Editor and run:
+
+```text
+supabase/schema.sql
+```
+
+The schema creates the required `posts` and `linkedin_tokens` tables, indexes, constraints, and enables RLS without adding public browser policies.
+
+### 4. Configure environment variables
+
+Copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then populate your own values:
 
 ```env
 PORT=3000
@@ -182,9 +229,9 @@ LINKEDIN_TOKEN_ENCRYPTION_KEY=
 LINKEDIN_API_VERSION=202608
 ```
 
-Never commit your `.env` file, API keys, OAuth client secret, encryption key, or LinkedIn access token.
+Never commit `.env`, API keys, OAuth client secrets, encryption keys, access tokens, or privileged Supabase credentials.
 
-### 4. Start the server
+### 5. Start PostPilot
 
 ```bash
 npm start
@@ -196,7 +243,7 @@ Development mode:
 npm run dev
 ```
 
-Verify the service:
+Verify the server:
 
 ```bash
 curl http://localhost:3000/health
@@ -215,20 +262,15 @@ Expected response:
 
 ## NVIDIA setup
 
-PostPilot uses NVIDIA's OpenAI-compatible chat-completions endpoint.
+PostPilot uses NVIDIA's OpenAI-compatible chat-completions API.
 
-Current production model:
+Default model:
 
 ```text
 nvidia/nemotron-3-nano-30b-a3b
 ```
 
-The AI client includes:
-
-- configurable timeout handling,
-- JSON response validation,
-- thinking/reasoning suppression,
-- retry support at the job layer.
+The NVIDIA client includes response validation, explicit timeout handling, and thinking/reasoning suppression. The daily job adds retries around generation calls.
 
 Test the connection:
 
@@ -236,7 +278,7 @@ Test the connection:
 npm run test:nvidia
 ```
 
-Test the complete post generator:
+Test the complete generator:
 
 ```bash
 npm run test:generator
@@ -246,38 +288,38 @@ npm run test:generator
 
 ## Supabase setup
 
-PostPilot stores generated content and encrypted LinkedIn credentials in Supabase.
+The complete starter schema is included at:
 
-### `posts` table
+```text
+supabase/schema.sql
+```
 
-Core fields used by the service:
+### `posts`
 
-| Column | Purpose |
-| --- | --- |
-| `id` | UUID primary key |
-| `topic` | Generated post topic |
-| `pillar_id` | Selected content pillar |
-| `post_type_id` | Selected post format |
-| `content` | Final generated LinkedIn content |
-| `status` | `draft`, `approved`, `published`, or `failed` |
-| `linkedin_post_id` | LinkedIn publication URN |
-| `error_message` | Failure information |
-| `created_at` | Creation timestamp |
-| `published_at` | Successful publication timestamp |
+Stores generated content and publication state, including:
 
-### `linkedin_tokens` table
+- topic,
+- content pillar,
+- post type,
+- final content,
+- status,
+- LinkedIn publication ID,
+- error information,
+- creation and publication timestamps.
 
-LinkedIn access tokens are encrypted before storage. The database stores ciphertext plus the IV/authentication metadata required for authenticated decryption rather than storing the access token as plaintext.
+### `linkedin_tokens`
 
-Use a backend-only Supabase secret key. Do not expose it to browser code.
+Stores encrypted OAuth token material. Access tokens are encrypted before they are written to Supabase; plaintext tokens are not intentionally persisted in the table.
+
+Use a **backend-only Supabase secret key**. Do not place privileged Supabase credentials in browser-side code.
 
 ---
 
 ## LinkedIn OAuth setup
 
-Create a LinkedIn Developer application and enable the permissions/products required for member posting.
+Create a LinkedIn Developer App and enable the products/scopes needed for member posting.
 
-PostPilot requests the scopes needed for profile identification and posting, including:
+PostPilot uses scopes including:
 
 ```text
 openid profile w_member_social
@@ -289,25 +331,15 @@ For local development, register:
 http://localhost:3000/auth/linkedin/callback
 ```
 
-For the current production deployment, register:
-
-```text
-https://postpilot-omega-gilt.vercel.app/auth/linkedin/callback
-```
-
-Start the OAuth flow locally:
+Start the OAuth flow at:
 
 ```text
 http://localhost:3000/auth/linkedin
 ```
 
-Production:
+For production, replace the redirect URI with your own deployed domain and register the exact callback URL in LinkedIn's Developer Portal.
 
-```text
-https://postpilot-omega-gilt.vercel.app/auth/linkedin
-```
-
-After successful authorization, PostPilot exchanges the authorization code server-side and stores the resulting access token encrypted in Supabase.
+After successful authorization, PostPilot exchanges the authorization code server-side and stores the resulting token encrypted in Supabase.
 
 ---
 
@@ -356,36 +388,36 @@ POST /api/jobs/daily-post
 Authorization: Bearer <DAILY_JOB_SECRET>
 ```
 
-The daily endpoint can return a successful skip response when a post has already been published during the current `Asia/Kolkata` calendar day.
+If a post has already been published during the current `Asia/Kolkata` calendar day, the endpoint returns a successful skip result instead of publishing again.
 
-> **Security:** The generation, publishing, and daily-job endpoints are protected. Never expose `DAILY_JOB_SECRET` in frontend code or commit it to Git.
+> Keep `DAILY_JOB_SECRET` server-side. Never expose it in frontend JavaScript.
 
 ---
 
 ## Automated scheduling
 
-The production scheduler lives at:
+The scheduler is defined in:
 
 ```text
 .github/workflows/daily-linkedin-post.yml
 ```
 
-Schedule:
+Reference schedule:
 
 ```yaml
 - cron: "30 3 * * *"
 ```
 
-GitHub Actions cron uses UTC, so `03:30 UTC` corresponds to **09:00 AM IST**.
+GitHub Actions cron uses UTC, so `03:30 UTC` is **09:00 AM IST**.
 
-Required GitHub repository secrets:
+Required repository secrets:
 
 ```text
 POSTPILOT_API_URL
 DAILY_JOB_SECRET
 ```
 
-The workflow also uses a concurrency group:
+The workflow includes concurrency protection:
 
 ```yaml
 concurrency:
@@ -393,21 +425,21 @@ concurrency:
   cancel-in-progress: false
 ```
 
-This prevents overlapping scheduler executions. Database-level daily checking adds a second layer of duplicate protection.
+Self-hosters can change the cron schedule to any cadence they prefer.
 
 ---
 
-## Validation and safety checks
+## Validation and safety
 
-A generated post must pass validation before it can be saved and published. The validator checks for issues such as:
+Generated content must pass validation before it can be published. Checks include:
 
-- excessive hashtags,
+- hashtag limits,
 - URLs,
-- AI reasoning or chain-of-thought leakage,
-- fabricated personal/career experience,
-- unsupported recruiter or hiring-market claims,
-- suspicious joined words/spacing,
-- invalid content length.
+- reasoning or chain-of-thought leakage,
+- fabricated personal experience,
+- unsupported recruiter/hiring claims,
+- suspicious joined words or spacing,
+- content-length constraints.
 
 Invalid content stops the pipeline before LinkedIn publishing.
 
@@ -417,20 +449,17 @@ Invalid content stops the pipeline before LinkedIn publishing.
 
 PostPilot is designed to fail closed rather than publish questionable output.
 
-- Topic generation is retried on transient failures.
-- Post generation is retried.
+- Generation calls are retried.
 - LinkedIn publishing is retried.
-- NVIDIA requests have an explicit timeout.
-- Failed publication attempts are recorded with `status = failed`.
-- Drafts are stored before publishing.
-- Already-published days return a safe skip result.
-- Concurrent GitHub workflow executions are serialized.
+- NVIDIA requests have explicit timeouts.
+- Drafts are stored before publication.
+- Failed publication attempts are recorded.
+- Same-day duplicate runs are skipped.
+- Concurrent scheduler runs are serialized.
 
 ---
 
 ## Test commands
-
-The repository includes focused scripts for individual subsystems.
 
 ```bash
 npm run test:nvidia
@@ -451,69 +480,95 @@ npm run test:failure
 npm run test:job-auth
 ```
 
-The following command executes the real daily pipeline and can publish to LinkedIn when configured with production-capable credentials:
+The following commands may interact with real external services and should be used deliberately:
 
 ```bash
+npm run test:linkedin-publish
 npm run daily-post
 ```
 
-Use publishing tests and the daily job deliberately because they can create real public LinkedIn posts.
+They can create real public LinkedIn posts when valid credentials are configured.
 
 ---
 
-## Deployment on Vercel
+## Deployment
 
-The Express app exports the application instance for Vercel while only opening a local listener outside production.
+The Express application exports the app instance for serverless deployment while only opening a local listener outside production.
 
-Configure all production secrets in **Vercel → Project Settings → Environment Variables**, then deploy the repository.
+For Vercel:
 
-Production base URL:
+1. import your fork/repository,
+2. configure all required environment variables,
+3. deploy,
+4. verify `/health`,
+5. update `LINKEDIN_REDIRECT_URI` to your production callback,
+6. register that exact callback in LinkedIn,
+7. configure GitHub Actions secrets if scheduled posting is desired.
 
-```text
-https://postpilot-omega-gilt.vercel.app
-```
-
-After deployment, verify:
-
-```text
-GET https://postpilot-omega-gilt.vercel.app/health
-```
+You are not required to use Vercel; any compatible Node.js hosting environment can be used with appropriate deployment changes.
 
 ---
 
 ## Security model
 
-PostPilot handles credentials that can publish content to a real LinkedIn account, so secrets are intentionally kept server-side.
+PostPilot can publish to a real LinkedIn account, so credential isolation is a core design requirement.
 
-- `.env` is ignored by Git.
-- LinkedIn access tokens are encrypted before database storage.
-- The encryption key remains in server environment variables.
-- Supabase privileged credentials remain backend-only.
-- Publishing and generation routes require bearer authentication.
-- GitHub Actions receives secrets through repository secrets.
-- The public repository contains no production credentials.
+- `.env` files are ignored by Git.
+- Tokens are encrypted before database storage.
+- Encryption keys remain server-side.
+- Supabase privileged credentials remain server-side.
+- Publishing and generation endpoints require bearer authentication.
+- GitHub Actions reads secrets from repository secrets.
+- No production credentials are intentionally included in this repository.
 
-If a credential is ever exposed, rotate it immediately in the corresponding provider and update Vercel/GitHub secrets.
+See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ---
 
-## Operational note: LinkedIn token expiry
+## LinkedIn token expiry
 
-The current LinkedIn OAuth response does not provide a refresh token. The access token therefore has a finite lifetime.
+LinkedIn access tokens have a finite lifetime. If your OAuth response does not include a refresh token, the deployment will eventually require reauthorization.
 
-When it expires, reauthorize PostPilot through:
+Open your own deployment's:
 
 ```text
-https://postpilot-omega-gilt.vercel.app/auth/linkedin
+/auth/linkedin
 ```
 
-A future version can add token-expiry monitoring and notification before the token becomes invalid.
+to run the OAuth flow again.
+
+A future improvement is proactive token-expiry monitoring and notification.
+
+---
+
+## Contributing
+
+Contributions are welcome.
+
+Before contributing, read:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [SECURITY.md](SECURITY.md)
+
+The repository includes structured bug-report and feature-request forms plus a pull-request template.
+
+Good first contribution areas include:
+
+- token-expiry alerts,
+- test coverage,
+- deployment documentation,
+- observability,
+- approval workflows,
+- analytics,
+- better distributed locking,
+- additional content strategies.
 
 ---
 
 ## Roadmap
 
-Potential next improvements:
+Potential future improvements:
 
 - LinkedIn token-expiry alerts
 - Administrative dashboard
@@ -527,34 +582,20 @@ Potential next improvements:
 
 ---
 
-## Production status
+## Open-source license
 
-The complete production path has been tested successfully:
+PostPilot is released under the [MIT License](LICENSE).
 
-```text
-GitHub Actions
-   → Vercel
-   → NVIDIA Nemotron
-   → Validator
-   → Supabase
-   → LinkedIn API
-   → Public LinkedIn post
-```
+You may use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the software subject to the terms of that license.
 
-A second same-day workflow execution was also tested and correctly skipped without creating a duplicate post.
-
----
-
-## License
-
-This project currently uses the **ISC License** as declared in `package.json`.
+Third-party services such as LinkedIn, NVIDIA, Supabase, GitHub, and Vercel remain subject to their own terms, policies, quotas, and API requirements.
 
 ---
 
 <div align="center">
 
-Built as an autonomous AI content-engineering project.
-
 **PostPilot — plan, generate, validate, publish.**
+
+Open source under MIT.
 
 </div>
