@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/Sudip-C/Postpilot/security
+    about: Please review SECURITY.md and use private reporting when available. Do not disclose vulnerabilities or secrets in public issues.
