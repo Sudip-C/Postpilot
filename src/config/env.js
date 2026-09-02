@@ -13,6 +13,14 @@ export const env = {
     "https://integrate.api.nvidia.com/v1/chat/completions",
   nvidiaModel:
     process.env.NVIDIA_MODEL || "nvidia/nemotron-3-super-120b-a12b",
+
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiApiUrl:
+    process.env.GEMINI_API_URL ||
+    "https://generativelanguage.googleapis.com/v1beta",
+  geminiModel:
+    process.env.GEMINI_MODEL || "gemini-3.5-flash",
+
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
 
@@ -20,7 +28,7 @@ export const env = {
   linkedinClientSecret: process.env.LINKEDIN_CLIENT_SECRET,
   linkedinRedirectUri: process.env.LINKEDIN_REDIRECT_URI,
   linkedinTokenEncryptionKey:
-  process.env.LINKEDIN_TOKEN_ENCRYPTION_KEY,
+    process.env.LINKEDIN_TOKEN_ENCRYPTION_KEY,
   linkedinApiVersion:
-  process.env.LINKEDIN_API_VERSION || "202608",
+    process.env.LINKEDIN_API_VERSION || "202608",
 };
