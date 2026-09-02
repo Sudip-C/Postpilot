@@ -1,4 +1,4 @@
-import { generateWithNemotron } from "./nvidia.service.js";
+import { generateWithAI } from "./aiGeneration.service.js";
 
 export async function generateDailyTopic({
   pillar,
@@ -48,7 +48,7 @@ Requirements:
 - Keep it under 160 characters.
 `.trim();
 
-  const result = await generateWithNemotron(
+  const result = await generateWithAI(
     [
       {
         role: "system",
@@ -64,7 +64,7 @@ Requirements:
       temperature: 0.7,
       maxTokens: 100,
       enableThinking: false,
-    }
+    },
   );
 
   const topic = result
@@ -80,7 +80,7 @@ Requirements:
 
   if (topic.length > 160) {
     throw new Error(
-      `Generated topic is too long: ${topic.length} characters.`
+      `Generated topic is too long: ${topic.length} characters.`,
     );
   }
 
