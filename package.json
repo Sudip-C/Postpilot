@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test:nvidia": "node scripts/test-nvidia.js",
+    "test:gemini": "node scripts/test-gemini.js",
     "test:prompt": "node scripts/test-linkedin-prompt.js",
     "test:generator": "node scripts/test-post-generator.js",
     "test:pillars": "node scripts/test-content-pillars.js",
