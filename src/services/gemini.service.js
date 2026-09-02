@@ -1,6 +1,9 @@
 import { env } from "../config/env.js";
 
-function buildGeminiPayload(messages, { maxTokens, thinkingLevel }) {
+function buildGeminiPayload(
+  messages,
+  { maxTokens, thinkingLevel, temperature },
+) {
   const systemText = messages
     .filter((message) => message?.role === "system")
     .map((message) => String(message.content || "").trim())
@@ -34,6 +37,7 @@ function buildGeminiPayload(messages, { maxTokens, thinkingLevel }) {
     contents,
     generationConfig: {
       maxOutputTokens: maxTokens,
+      temperature,
       thinkingConfig: {
         thinkingLevel,
       },
@@ -44,13 +48,17 @@ function buildGeminiPayload(messages, { maxTokens, thinkingLevel }) {
 export async function generateWithGemini(
   messages,
   {
+    temperature = 0.7,
     maxTokens = 1000,
     thinkingLevel = "minimal",
     timeoutMs = 30000,
   } = {},
 ) {
   if (!env.geminiApiKey) {
-    throw new Error("GEMINI_API_KEY is not configured.");
+    const error = new Error("GEMINI_API_KEY is not configured.");
+    error.provider = "gemini";
+    error.code = "GEMINI_NOT_CONFIGURED";
+    throw error;
   }
 
   if (!Array.isArray(messages) || messages.length === 0) {
@@ -77,6 +85,7 @@ export async function generateWithGemini(
         buildGeminiPayload(messages, {
           maxTokens,
           thinkingLevel,
+          temperature,
         }),
       ),
     });
@@ -87,6 +96,7 @@ export async function generateWithGemini(
       const error = new Error(
         `Gemini API returned an empty response body (HTTP ${response.status}).`,
       );
+      error.provider = "gemini";
       error.status = response.status;
       throw error;
     }
@@ -102,6 +112,7 @@ export async function generateWithGemini(
           300,
         )}`,
       );
+      error.provider = "gemini";
       error.status = response.status;
       throw error;
     }
@@ -110,6 +121,7 @@ export async function generateWithGemini(
       const error = new Error(
         `Gemini API request failed (${response.status}): ${JSON.stringify(data)}`,
       );
+      error.provider = "gemini";
       error.status = response.status;
       throw error;
     }
@@ -120,7 +132,9 @@ export async function generateWithGemini(
       .trim();
 
     if (!content) {
-      throw new Error("Gemini API returned an empty response.");
+      const error = new Error("Gemini API returned an empty response.");
+      error.provider = "gemini";
+      throw error;
     }
 
     return content;
@@ -129,8 +143,13 @@ export async function generateWithGemini(
       const timeoutError = new Error(
         `Gemini API request timed out after ${timeoutMs / 1000} seconds.`,
       );
+      timeoutError.provider = "gemini";
       timeoutError.code = "GEMINI_TIMEOUT";
       throw timeoutError;
+    }
+
+    if (!error.provider) {
+      error.provider = "gemini";
     }
 
     throw error;
