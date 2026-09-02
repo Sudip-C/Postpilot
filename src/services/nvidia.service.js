@@ -7,10 +7,13 @@ export async function generateWithNemotron(
     maxTokens = 1000,
     enableThinking = false,
     timeoutMs = 60000,
-  } = {}
+  } = {},
 ) {
   if (!env.nvidiaApiKey) {
-    throw new Error("NVIDIA_API_KEY is not configured.");
+    const error = new Error("NVIDIA_API_KEY is not configured.");
+    error.provider = "nvidia";
+    error.code = "NVIDIA_NOT_CONFIGURED";
+    throw error;
   }
 
   const controller = new AbortController();
@@ -46,9 +49,12 @@ export async function generateWithNemotron(
     const responseText = await response.text();
 
     if (!responseText.trim()) {
-      throw new Error(
-        `NVIDIA API returned an empty response body (HTTP ${response.status}).`
+      const error = new Error(
+        `NVIDIA API returned an empty response body (HTTP ${response.status}).`,
       );
+      error.provider = "nvidia";
+      error.status = response.status;
+      throw error;
     }
 
     let data;
@@ -56,40 +62,47 @@ export async function generateWithNemotron(
     try {
       data = JSON.parse(responseText);
     } catch {
-      throw new Error(
+      const error = new Error(
         `NVIDIA API returned invalid JSON (HTTP ${response.status}): ${responseText.slice(
           0,
-          300
-        )}`
+          300,
+        )}`,
       );
+      error.provider = "nvidia";
+      error.status = response.status;
+      throw error;
     }
 
     if (!response.ok) {
-      throw new Error(
-        `NVIDIA API request failed (${response.status}): ${JSON.stringify(
-          data
-        )}`
+      const error = new Error(
+        `NVIDIA API request failed (${response.status}): ${JSON.stringify(data)}`,
       );
+      error.provider = "nvidia";
+      error.status = response.status;
+      throw error;
     }
 
-    const content =
-      data?.choices?.[0]?.message?.content;
+    const content = data?.choices?.[0]?.message?.content;
 
     if (!content || !content.trim()) {
-      throw new Error(
-        "NVIDIA API returned an empty response."
-      );
+      const error = new Error("NVIDIA API returned an empty response.");
+      error.provider = "nvidia";
+      throw error;
     }
 
     return content.trim();
   } catch (error) {
-    if (
-      error.name === "AbortError" ||
-      controller.signal.aborted
-    ) {
-      throw new Error(
-        `NVIDIA API request timed out after ${timeoutMs / 1000} seconds.`
+    if (error.name === "AbortError" || controller.signal.aborted) {
+      const timeoutError = new Error(
+        `NVIDIA API request timed out after ${timeoutMs / 1000} seconds.`,
       );
+      timeoutError.provider = "nvidia";
+      timeoutError.code = "NVIDIA_TIMEOUT";
+      throw timeoutError;
+    }
+
+    if (!error.provider) {
+      error.provider = "nvidia";
     }
 
     throw error;
